@@ -62,7 +62,7 @@ jobs:
           IMAGE=${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.run_id }}
           echo "Deploying DEV with $IMAGE"
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/dev/deployment.yaml
-          kubectl apply -f k8s/dev/
+          kubectl apply -n dev -f k8s/dev/
 
   deploy-stage:
     runs-on: ubuntu-latest
@@ -86,7 +86,7 @@ jobs:
           IMAGE=${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.run_id }}
           echo "Deploying STAGE with $IMAGE"
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/stage/deployment.yaml
-          kubectl apply -f k8s/stage/
+          kubectl apply -n stage -f k8s/stage/
 
   deploy-prod:
     runs-on: ubuntu-latest
@@ -110,4 +110,4 @@ jobs:
           IMAGE=${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.run_id }}
           echo "Deploying PROD with $IMAGE"
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/prod/deployment.yaml
-          kubectl apply -f k8s/prod/
+          kubectl apply -n prod -f k8s/prod/
