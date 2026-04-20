@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ci-metrics-job
+  namespace: monitoring
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: push-metrics
+        image: curlimages/curl:latest
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "ci_deploy_status{env=\"{{ENV}}\",service=\"{{SERVICE}}\"} {{STATUS}}" | curl --data-binary @- \
+            http://pushgateway-prometheus-pushgateway.monitoring.svc.cluster.local:9091/metrics/job/{{SERVICE}}
