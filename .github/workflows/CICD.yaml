@@ -69,7 +69,7 @@ jobs:
           if [ "${{ job.status }}" = "success" ]; then STATUS=1; fi
 
           kubectl delete job ci-metrics-job -n monitoring --ignore-not-found
-          sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/dev/g; s/{{SERVICE}}/backend/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
+          sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/dev/g; s/{{SERVICE}}/backend/g; s/{{RUN_ID}}/${{ github.run_id }}/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
 
   deploy-stage:
     runs-on: ubuntu-latest
@@ -101,7 +101,7 @@ jobs:
           if [ "${{ job.status }}" = "success" ]; then STATUS=1; fi
 
           kubectl delete job ci-metrics-job -n monitoring --ignore-not-found
-          sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/stage/g; s/{{SERVICE}}/backend/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
+          sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/stage/g; s/{{SERVICE}}/backend/g; s/{{RUN_ID}}/${{ github.run_id }}/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
 
   deploy-prod:
     runs-on: ubuntu-latest
@@ -133,4 +133,4 @@ jobs:
           if [ "${{ job.status }}" = "success" ]; then STATUS=1; fi
 
           kubectl delete job ci-metrics-job -n monitoring --ignore-not-found
-          sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/prod/g; s/{{SERVICE}}/backend/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
+          sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/prod/g; s/{{SERVICE}}/backend/g; s/{{RUN_ID}}/${{ github.run_id }}/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
