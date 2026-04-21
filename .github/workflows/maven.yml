@@ -39,7 +39,6 @@ jobs:
           docker push $IMAGE
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
 
-
   deploy-dev:
     runs-on: ubuntu-latest
     needs: build
@@ -63,16 +62,14 @@ jobs:
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/dev/deployment.yaml
           kubectl apply -n dev -f k8s/dev/
 
-      # 📊 DEV METRICS (AKS JOB)
       - name: Send Dev Metrics
         if: always()
         run: |
           STATUS=0
-          if [ "${{ job.status }}" == "success" ]; then STATUS=1; fi
+          if [ "${{ job.status }}" = "success" ]; then STATUS=1; fi
 
-          kubectl delete job ci-metrics-job --ignore-not-found -n monitoring
+          kubectl delete job ci-metrics-job -n monitoring --ignore-not-found
           sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/dev/g; s/{{SERVICE}}/backend/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
-
 
   deploy-stage:
     runs-on: ubuntu-latest
@@ -101,11 +98,10 @@ jobs:
         if: always()
         run: |
           STATUS=0
-          if [ "${{ job.status }}" == "success" ]; then STATUS=1; fi
+          if [ "${{ job.status }}" = "success" ]; then STATUS=1; fi
 
-          kubectl delete job ci-metrics-job --ignore-not-found -n monitoring
+          kubectl delete job ci-metrics-job -n monitoring --ignore-not-found
           sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/stage/g; s/{{SERVICE}}/backend/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
-
 
   deploy-prod:
     runs-on: ubuntu-latest
@@ -134,7 +130,7 @@ jobs:
         if: always()
         run: |
           STATUS=0
-          if [ "${{ job.status }}" == "success" ]; then STATUS=1; fi
+          if [ "${{ job.status }}" = "success" ]; then STATUS=1; fi
 
-          kubectl delete job ci-metrics-job --ignore-not-found -n monitoring
+          kubectl delete job ci-metrics-job -n monitoring --ignore-not-found
           sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/prod/g; s/{{SERVICE}}/backend/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
