@@ -14,5 +14,10 @@ spec:
             - /bin/sh
             - -c
             - |
+              echo "Pushing CI/CD metrics to Pushgateway"
+
               echo "ci_deploy_status{env=\"{{ENV}}\",service=\"{{SERVICE}}\"} {{STATUS}}" | curl --data-binary @- \
-              http://pushgateway-prometheus-pushgateway:9091/metrics/job/{{SERVICE}}
+              http://pushgateway-prometheus-pushgateway:9091/metrics/job/{{SERVICE}}_status
+
+              echo "ci_deploy_event{env=\"{{ENV}}\",service=\"{{SERVICE}}\",run_id=\"{{RUN_ID}}\"} 1" | curl --data-binary @- \
+              http://pushgateway-prometheus-pushgateway:9091/metrics/job/{{SERVICE}}_event
