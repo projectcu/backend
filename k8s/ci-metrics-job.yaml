@@ -8,11 +8,11 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-      - name: push-metrics
-        image: curlimages/curl:latest
-        command:
-          - /bin/sh
-          - -c
-          - |
-            echo "ci_deploy_status{env=\"{{ENV}}\",service=\"{{SERVICE}}\"} {{STATUS}}" | curl --data-binary @- \
-            http://pushgateway-prometheus-pushgateway.monitoring.svc.cluster.local:9091/metrics/job/{{SERVICE}}
+        - name: metrics
+          image: curlimages/curl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "ci_deploy_status{env=\"{{ENV}}\",service=\"{{SERVICE}}\"} {{STATUS}}" | curl --data-binary @- \
+              http://pushgateway-prometheus-pushgateway:9091/metrics/job/{{SERVICE}}
