@@ -60,7 +60,17 @@ jobs:
         run: |
           IMAGE=${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.run_id }}
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/dev/deployment.yaml
+
           kubectl apply -n dev -f k8s/dev/
+
+          kubectl set env deployment/backend -n dev \
+            DB_URL="${{ secrets.DB_URL }}" \
+            DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+            DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            APPLICATIONINSIGHTS_CONNECTION_STRING="${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}"
+
+          kubectl rollout restart deployment/backend -n dev
+          kubectl rollout status deployment/backend -n dev
 
       - name: Send Dev Metrics
         if: always()
@@ -92,7 +102,17 @@ jobs:
         run: |
           IMAGE=${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.run_id }}
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/stage/deployment.yaml
+
           kubectl apply -n stage -f k8s/stage/
+
+          kubectl set env deployment/backend -n stage \
+            DB_URL="${{ secrets.DB_URL }}" \
+            DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+            DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            APPLICATIONINSIGHTS_CONNECTION_STRING="${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}"
+
+          kubectl rollout restart deployment/backend -n stage
+          kubectl rollout status deployment/backend -n stage
 
       - name: Send Stage Metrics
         if: always()
@@ -124,7 +144,17 @@ jobs:
         run: |
           IMAGE=${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.run_id }}
           sed -i "s|IMAGE_PLACEHOLDER|$IMAGE|g" k8s/prod/deployment.yaml
+
           kubectl apply -n prod -f k8s/prod/
+
+          kubectl set env deployment/backend -n prod \
+            DB_URL="${{ secrets.DB_URL }}" \
+            DB_USERNAME="${{ secrets.DB_USERNAME }}" \
+            DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            APPLICATIONINSIGHTS_CONNECTION_STRING="${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}"
+
+          kubectl rollout restart deployment/backend -n prod
+          kubectl rollout status deployment/backend -n prod
 
       - name: Send Prod Metrics
         if: always()
