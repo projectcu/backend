@@ -2,8 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  namespace: prod
 spec:
-  replicas: 3
+  replicas: 2   # HPA will scale from here
   selector:
     matchLabels:
       app: backend
@@ -17,9 +18,27 @@ spec:
           image: IMAGE_PLACEHOLDER
           ports:
             - containerPort: 8080
+
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: "prod"
+
+            - name: DB_URL
+              value: "${DB_URL}"
+
+            - name: DB_USERNAME
+              value: "${DB_USERNAME}"
+
+            - name: DB_PASSWORD
+              value: "${DB_PASSWORD}"
+
             - name: APPLICATIONINSIGHTS_CONNECTION_STRING
-              value: "InstrumentationKey=27c32fef-e9c9-4988-91b1-b62eb3a15ad2;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=12f2cf2b-273a-42f7-94af-4cc851a995c0"
-  
+              value: "${APPLICATIONINSIGHTS_CONNECTION_STRING}"
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
