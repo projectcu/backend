@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 
 @EnableWebSecurity
@@ -36,18 +35,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private DataSource dataSource;
 
     /**
-     * Creates a bean of type JdbcUserDetailsManager that will be used in
-     * HomeController
-     * 
-     * @return an instance configured to use our datasource
-     * @throws Exception
+     * JDBC UserDetails Manager (no schema auto-creation)
      */
     @Bean
-    public JdbcUserDetailsManager jdbcUserDetailsManager() throws Exception {
-        // provides crud operations for users
+    public JdbcUserDetailsManager jdbcUserDetailsManager() {
         JdbcUserDetailsManager jdbcUserDetailsManager = new JdbcUserDetailsManager();
-
-        // Link up with our datasource
         jdbcUserDetailsManager.setDataSource(dataSource);
         return jdbcUserDetailsManager;
     }
@@ -55,12 +47,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeRequests()
-                .antMatchers("/user/**").hasAnyRole("USER", "MANAGER") // sets up authorization
+                .antMatchers("/user/**").hasAnyRole("USER", "MANAGER")
                 .antMatchers("/secured/**").hasAnyRole("USER", "MANAGER")
                 .antMatchers("/manager/**").hasRole("MANAGER")
                 .antMatchers("/h2-console/**").permitAll()
-                .antMatchers("/", "/**").permitAll() // allows access to index in templates
-                .and() // allows us to chain
+                .antMatchers("/", "/**").permitAll()
+                .and()
                 .formLogin().loginPage("/login")
                 .defaultSuccessUrl("/secured")
                 .and()
@@ -74,17 +66,21 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.headers().frameOptions().disable();
     }
 
+    /**
+     * ✅ FIXED: Removed withDefaultSchema() (H2-specific)
+     * ✅ Uses SQL Server compatible queries
+     */
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 
         auth.jdbcAuthentication()
                 .dataSource(dataSource)
-                .withDefaultSchema()
                 .passwordEncoder(passwordEncoder)
-                .withUser("bugs")
-                .password(passwordEncoder.encode("bunny")).roles("USER")
-                .and()
-                .withUser("daffy")
-                .password(passwordEncoder.encode("duck")).roles("USER", "MANAGER");
+                .usersByUsernameQuery(
+                        "SELECT username, password, enabled FROM users WHERE username = ?"
+                )
+                .authoritiesByUsernameQuery(
+                        "SELECT username, authority FROM authorities WHERE username = ?"
+                );
     }
 }
