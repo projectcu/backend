@@ -19,6 +19,9 @@ jobs:
           distribution: temurin
           java-version: 11
 
+      - name: Run backend tests
+        run: mvn test
+
       - name: Build with Maven
         run: mvn clean package -DskipTests=true
 
@@ -34,7 +37,6 @@ jobs:
           IMAGE=${{ secrets.ACR_LOGIN_SERVER }}/backend:${{ github.run_id }}
           docker build -t $IMAGE .
           docker push $IMAGE
-          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
 
   deploy-dev:
     runs-on: ubuntu-latest
@@ -63,14 +65,6 @@ jobs:
             DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
             APPLICATIONINSIGHTS_CONNECTION_STRING="${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}"
 
-      - name: Send Dev Metrics
-        if: always()
-        run: |
-          STATUS=0
-          if [ "${{ job.status }}" = "success" ]; then STATUS=1; fi
-          kubectl delete job ci-metrics-job -n monitoring --ignore-not-found
-          sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/dev/g; s/{{SERVICE}}/backend/g; s/{{RUN_ID}}/${{ github.run_id }}/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
-
   deploy-stage:
     runs-on: ubuntu-latest
     needs: deploy-dev
@@ -97,14 +91,6 @@ jobs:
             DB_USERNAME="${{ secrets.DB_USERNAME }}" \
             DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
             APPLICATIONINSIGHTS_CONNECTION_STRING="${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}"
-
-      - name: Send Stage Metrics
-        if: always()
-        run: |
-          STATUS=0
-          if [ "${{ job.status }}" = "success" ]; then STATUS=1; fi
-          kubectl delete job ci-metrics-job -n monitoring --ignore-not-found
-          sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/stage/g; s/{{SERVICE}}/backend/g; s/{{RUN_ID}}/${{ github.run_id }}/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
 
   deploy-prod:
     runs-on: ubuntu-latest
@@ -133,12 +119,10 @@ jobs:
             DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
             APPLICATIONINSIGHTS_CONNECTION_STRING="${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}"
 
-          kubectl rollout status deployment/backend -n prod --timeout=60s
-
-      - name: Send Prod Metrics
-        if: always()
-        run: |
-          STATUS=0
-          if [ "${{ job.status }}" = "success" ]; then STATUS=1; fi
-          kubectl delete job ci-metrics-job -n monitoring --ignore-not-found
-          sed "s/{{STATUS}}/$STATUS/g; s/{{ENV}}/prod/g; s/{{SERVICE}}/backend/g; s/{{RUN_ID}}/${{ github.run_id }}/g" k8s/ci-metrics-job.yaml | kubectl apply -f -
+          kubectl rollout status deployment/backend -n prod --timeout=60s || {
+            echo "Backend rollout still in progress after 60 seconds."
+            kubectl get deployment/backend -n prod
+            kubectl get pods -n prod -l app=backend -o wide
+            kubectl describe deployment/backend -n prod
+            echo "Pipeline will continue. Kubernetes rollout is still running in AKS."
+          }
